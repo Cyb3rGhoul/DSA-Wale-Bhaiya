@@ -2,7 +2,7 @@ import React from 'react';
 import { Copy, Check, Send, Loader2 } from 'lucide-react';
 
 // CodeBlock Component
-const CodeBlock = ({ code, language = 'c++' }) => {
+const CodeBlock = ({ code, language = 'cpp' }) => {
   const [copied, setCopied] = React.useState(false);
 
   const copyCode = () => {
@@ -23,7 +23,7 @@ const CodeBlock = ({ code, language = 'c++' }) => {
           <span className="text-xs font-medium">{copied ? 'Copied!' : 'Copy'}</span>
         </button>
       </div>
-      <pre className="p-5 text-sm text-gray-100 overflow-x-auto font-mono leading-relaxed">
+      <pre className="p-5 text-sm text-gray-100 overflow-x-auto font-mono leading-relaxed whitespace-pre">
         <code className="text-gray-100">{code}</code>
       </pre>
     </div>
@@ -58,7 +58,7 @@ const ChatMessage = ({ message, isUser, timestamp }) => {
     let currentIndex = 0;
     
     // Regex patterns for different formatting
-    const codeBlockRegex = /```(\w+)?\n([\s\S]*?)```/g;
+    const codeBlockRegex = /```([\w+]+)?\n([\s\S]*?)```/g;
     const inlineCodeRegex = /`([^`]+)`/g;
     const boldRegex = /\*\*(.*?)\*\*/g;
     const italicRegex = /\*(.*?)\*/g;
@@ -72,7 +72,7 @@ const ChatMessage = ({ message, isUser, timestamp }) => {
         type: 'codeblock',
         start: match.index,
         end: match.index + match[0].length,
-        language: match[1] || 'c++',
+        language: match[1] || 'cpp',
         code: match[2].trim()
       });
     }
@@ -123,7 +123,7 @@ const ChatMessage = ({ message, isUser, timestamp }) => {
   const messageParts = formatMessage(message);
 
   return (
-    <div className={`flex items-start gap-4 p-6 animate-fadeIn ${isUser ? 'flex-row-reverse' : ''}`}>
+    <div className={`flex items-start gap-4 p-6 animate-fadeIn ${isUser ? 'flex-row items-end' : ''}`}>
       <div className={`w-9 h-9 rounded-2xl flex items-center justify-center text-white text-sm font-semibold shadow-lg border border-white/10 ${
         isUser 
           ? 'bg-gradient-to-br from-emerald-500/80 to-teal-600/80 backdrop-blur-sm' 
@@ -131,10 +131,10 @@ const ChatMessage = ({ message, isUser, timestamp }) => {
       }`}>
         {isUser ? 'Y' : 'B'}
       </div>
-      <div className="flex-1">
-        <div className={`inline-block rounded-2xl px-5 py-4 max-w-4xl shadow-lg backdrop-blur-sm border ${
+      <div className={`flex-1 ${isUser ? 'text-left' : 'text-left'}`}>
+        <div className={`inline-block rounded-2xl px-5 py-4 max-w-4xl shadow-lg backdrop-blur-sm border text-left ${
           isUser 
-            ? 'bg-gradient-to-br from-emerald-500/90 to-teal-600/90 text-gray-100 rounded-tr-md border-white/10' 
+            ? 'bg-gradient-to-br from-emerald-500/90 to-teal-600/90 text-gray-100 rounded-tl-md border-white/10' 
             : 'bg-gray-800/60 text-gray-200 rounded-tl-md border-gray-700/30'
         }`}>
           {messageParts.map((part, index) => {
