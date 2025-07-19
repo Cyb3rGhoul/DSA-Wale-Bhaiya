@@ -3,6 +3,7 @@ import React, { useEffect, useRef } from 'react';
 import { ChatMessage, ChatInput, TypingIndicator } from './components/ChatComponent';
 import { useGemini } from './hooks/useGemini';
 import { RefreshCcw, Brain, Code2 } from 'lucide-react';
+import './App.css';
 
 function App() {
   const { messages, isLoading, sendMessage, clearChat } = useGemini();
@@ -47,7 +48,7 @@ function App() {
 
       {/* Chat Messages */}
       <main className="flex-1 overflow-hidden">
-        <div className="h-full overflow-y-auto">
+        <div className="h-full overflow-y-auto hide-scrollbar">
           <div className="max-w-4xl mx-auto">
             {/* Welcome Message */}
             {messages.length === 1 && (
@@ -82,7 +83,7 @@ function App() {
       </main>
 
       {/* Chat Input */}
-      <div className="max-w-4xl mx-auto w-full">
+      <div className="max-w-4xl mx-auto w-full mb-1">
         <ChatInput onSendMessage={sendMessage} isLoading={isLoading} />
       </div>
 

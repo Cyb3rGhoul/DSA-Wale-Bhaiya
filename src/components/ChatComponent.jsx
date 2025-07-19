@@ -1,5 +1,5 @@
 import React from 'react';
-import { Copy, Check, Send, Loader2 } from 'lucide-react';
+import { Copy, Check, Send, Loader2, Bot, User } from 'lucide-react';
 
 // CodeBlock Component
 const CodeBlock = ({ code, language = 'cpp' }) => {
@@ -35,7 +35,7 @@ const TypingIndicator = () => {
   return (
     <div className="flex items-start gap-4 p-6 animate-fadeIn">
       <div className="w-9 h-9 rounded-2xl bg-gradient-to-br from-blue-500/80 to-purple-600/80 backdrop-blur-sm flex items-center justify-center text-white text-sm font-semibold shadow-lg border border-white/10">
-        B
+        <Bot className="w-6 h-6" />
       </div>
       <div className="flex-1">
         <div className="bg-gray-800/60 backdrop-blur-sm rounded-2xl rounded-tl-md px-5 py-4 max-w-xs border border-gray-700/30 shadow-lg">
@@ -129,7 +129,7 @@ const ChatMessage = ({ message, isUser, timestamp }) => {
           ? 'bg-gradient-to-br from-emerald-500/80 to-teal-600/80 backdrop-blur-sm' 
           : 'bg-gradient-to-br from-blue-500/80 to-purple-600/80 backdrop-blur-sm'
       }`}>
-        {isUser ? 'Y' : 'B'}
+        {isUser ? <User className="w-6 h-6" /> : <Bot className="w-6 h-6" />}
       </div>
       <div className={`flex-1 ${isUser ? 'text-left' : 'text-left'}`}>
         <div className={`inline-block rounded-2xl px-5 py-4 max-w-4xl shadow-lg backdrop-blur-sm border text-left ${
@@ -162,11 +162,28 @@ const ChatMessage = ({ message, isUser, timestamp }) => {
 // ChatInput Component
 const ChatInput = ({ onSendMessage, isLoading }) => {
   const [message, setMessage] = React.useState('');
+  const textareaRef = React.useRef(null);
+
+  // Auto-resize textarea based on content
+  React.useEffect(() => {
+    const textarea = textareaRef.current;
+    if (textarea) {
+      // Reset height to get correct scrollHeight
+      textarea.style.height = 'auto';
+      // Set new height (but limit to 8 rows max)
+      const maxHeight = 8 * 24; // 8 rows * line-height (approx)
+      textarea.style.height = `${Math.min(textarea.scrollHeight, maxHeight)}px`;
+    }
+  }, [message]);
 
   const handleSubmit = () => {
     if (message.trim() && !isLoading) {
       onSendMessage(message.trim());
       setMessage('');
+      // Reset height after submit
+      if (textareaRef.current) {
+        textareaRef.current.style.height = 'auto';
+      }
     }
   };
 
@@ -178,21 +195,24 @@ const ChatInput = ({ onSendMessage, isLoading }) => {
   };
 
   return (
-    <div className="border-t border-gray-700/30 bg-gray-900/40 backdrop-blur-lg p-6">
-      <div className="flex gap-3">
+    <div className="border-t border-gray-700/30 bg-gray-900/40 backdrop-blur-lg p-6 rounded-2xl mb-4 shadow-xl">
+      <div className="flex gap-3 items-end"> {/* Changed to items-end to align button to bottom */}
         <textarea
+          ref={textareaRef}
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           onKeyDown={handleKeyPress}
           placeholder="DSA ka koi bhi question pooch, bhai! 🤔"
-          className="flex-1 resize-none rounded-2xl border border-gray-600/40 bg-gray-800/50 backdrop-blur-sm px-5 py-4 text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all duration-200 min-h-[52px] max-h-32 shadow-lg"
+          className="flex-1 resize-none rounded-2xl border border-gray-600/40 bg-gray-800/50 backdrop-blur-sm px-5 py-4 text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all duration-200 min-h-[52px] overflow-y-auto scrollbar-hide"
           rows={1}
           disabled={isLoading}
+          style={{ lineHeight: '1.5rem' }} // Consistent line height for calculation
         />
         <button
           onClick={handleSubmit}
           disabled={!message.trim() || isLoading}
-          className="bg-gradient-to-br from-blue-500/90 to-purple-600/90 backdrop-blur-sm text-white rounded-2xl px-5 py-4 hover:from-blue-600 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center min-w-[52px] shadow-lg border border-white/10 hover:shadow-xl"
+          className="bg-gradient-to-br from-blue-500/90 to-purple-600/90 backdrop-blur-sm text-white rounded-2xl px-5 hover:from-blue-600 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center min-w-[52px] h-[52px] shadow-lg border border-white/10 hover:shadow-xl"
+          style={{ height: '52px' }} // Fixed height matching initial textarea height
         >
           {isLoading ? <Loader2 size={20} className="animate-spin" /> : <Send size={20} />}
         </button>
