@@ -2,7 +2,7 @@ import React from 'react';
 import { Copy, Check, Send, Loader2 } from 'lucide-react';
 
 // CodeBlock Component
-const CodeBlock = ({ code, language = 'javascript' }) => {
+const CodeBlock = ({ code, language = 'c++' }) => {
   const [copied, setCopied] = React.useState(false);
 
   const copyCode = () => {
@@ -72,7 +72,7 @@ const ChatMessage = ({ message, isUser, timestamp }) => {
         type: 'codeblock',
         start: match.index,
         end: match.index + match[0].length,
-        language: match[1] || 'javascript',
+        language: match[1] || 'c++',
         code: match[2].trim()
       });
     }

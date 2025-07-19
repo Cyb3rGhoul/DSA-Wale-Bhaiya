@@ -35,7 +35,7 @@ RESPONSE FORMAT:
 - Use **bold** for important concepts
 - Use \`inline code\` for small code pieces
 - Use code blocks for snippets:
-\`\`\`javascript
+\`\`\`c++
 // small example here
 \`\`\`
 - Ask questions to engage them
