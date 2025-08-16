@@ -39,8 +39,6 @@ export const useGemini = () => {
 
       setMessages(prev => [...prev, botMessage]);
     } catch (error) {
-      console.error('Error sending message:', error);
-      
       // Add error message
       const errorMessage = {
         id: Date.now() + 1,

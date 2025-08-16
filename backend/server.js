@@ -9,7 +9,8 @@ import cookieParser from 'cookie-parser';
 import config from './src/config/env.js';
 import connectDB from './src/config/database.js';
 import errorHandler from './src/middleware/errorHandler.js';
-import logger from './src/middleware/logger.js';
+import requestLogger from './src/middleware/logger.js';
+import logger from './src/utils/logger.js';
 import { sendSuccess } from './src/utils/response.js';
 import { getDatabaseStatus, isDatabaseHealthy } from './src/utils/dbStatus.js';
 
@@ -28,7 +29,7 @@ connectDB();
 
 // Request logging middleware (only in development)
 if (config.nodeEnv === 'development') {
-  app.use(logger);
+  app.use(requestLogger);
 }
 
 // Security middleware
@@ -119,12 +120,14 @@ app.use('*', (req, res) => {
 app.use(errorHandler);
 
 // Start server
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📍 Health check: http://localhost:${PORT}/api/health`);
-  console.log(`🌍 Environment: ${config.nodeEnv}`);
-  console.log(`🔗 Frontend URL: ${config.frontendUrl}`);
-  console.log(`💾 MongoDB URI: ${config.mongoUri.replace(/\/\/.*@/, '//***:***@')}`); // Hide credentials
+app.listen(PORT, '0.0.0.0', () => {
+  logger.server(`Server running on port ${PORT}`);
+  if (config.nodeEnv === 'development') {
+    logger.info(`Health check: http://localhost:${PORT}/api/health`);
+    logger.info(`Environment: ${config.nodeEnv}`);
+    logger.info(`Frontend URL: ${config.frontendUrl}`);
+    logger.info(`MongoDB URI: ${config.mongoUri.replace(/\/\/.*@/, '//***:***@')}`); // Hide credentials
+  }
 });
 
 export default app;

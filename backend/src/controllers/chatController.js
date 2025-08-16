@@ -2,6 +2,7 @@ import { validationResult } from 'express-validator';
 import Chat from '../models/Chat.js';
 import { sendSuccess, sendError } from '../utils/response.js';
 import asyncHandler from '../utils/asyncHandler.js';
+import logger from '../utils/logger.js';
 
 /**
  * @desc    Get all user chats
@@ -40,7 +41,7 @@ export const getChats = asyncHandler(async (req, res) => {
     }, 'Chats retrieved successfully');
 
   } catch (error) {
-    console.error('Get chats error:', error);
+    logger.error('Get chats error:', error.message);
     sendError(res, 'Failed to retrieve chats', 500);
   }
 });
@@ -66,7 +67,7 @@ export const getChat = asyncHandler(async (req, res) => {
     sendSuccess(res, { chat }, 'Chat retrieved successfully');
 
   } catch (error) {
-    console.error('Get chat error:', error);
+    logger.error('Get chat error:', error.message);
     if (error.name === 'CastError') {
       return sendError(res, 'Invalid chat ID', 400);
     }
@@ -105,7 +106,7 @@ export const createChat = asyncHandler(async (req, res) => {
     sendSuccess(res, { chat }, 'Chat created successfully', 201);
 
   } catch (error) {
-    console.error('Create chat error:', error);
+    logger.error('Create chat error:', error.message);
     if (error.name === 'ValidationError') {
       const validationErrors = Object.values(error.errors).map(err => ({
         field: err.path,
@@ -155,7 +156,7 @@ export const updateChat = asyncHandler(async (req, res) => {
     sendSuccess(res, { chat }, 'Chat updated successfully');
 
   } catch (error) {
-    console.error('Update chat error:', error);
+    logger.error('Update chat error:', error.message);
     if (error.name === 'CastError') {
       return sendError(res, 'Invalid chat ID', 400);
     }
@@ -193,7 +194,7 @@ export const deleteChat = asyncHandler(async (req, res) => {
     sendSuccess(res, null, 'Chat deleted successfully');
 
   } catch (error) {
-    console.error('Delete chat error:', error);
+    logger.error('Delete chat error:', error.message);
     if (error.name === 'CastError') {
       return sendError(res, 'Invalid chat ID', 400);
     }
@@ -245,7 +246,7 @@ export const addMessage = asyncHandler(async (req, res) => {
     }, 'Message added successfully', 201);
 
   } catch (error) {
-    console.error('Add message error:', error);
+    logger.error('Add message error:', error.message);
     if (error.name === 'CastError') {
       return sendError(res, 'Invalid chat ID', 400);
     }
@@ -283,7 +284,7 @@ export const archiveChat = asyncHandler(async (req, res) => {
     sendSuccess(res, { chat }, 'Chat archived successfully');
 
   } catch (error) {
-    console.error('Archive chat error:', error);
+    logger.error('Archive chat error:', error.message);
     if (error.name === 'CastError') {
       return sendError(res, 'Invalid chat ID', 400);
     }
@@ -314,7 +315,7 @@ export const unarchiveChat = asyncHandler(async (req, res) => {
     sendSuccess(res, { chat }, 'Chat unarchived successfully');
 
   } catch (error) {
-    console.error('Unarchive chat error:', error);
+    logger.error('Unarchive chat error:', error.message);
     if (error.name === 'CastError') {
       return sendError(res, 'Invalid chat ID', 400);
     }

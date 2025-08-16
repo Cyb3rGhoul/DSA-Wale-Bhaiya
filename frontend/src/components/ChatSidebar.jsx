@@ -49,24 +49,18 @@ const ChatSidebar = ({ currentChatId, onChatSelect, onNewChat, isOpen, onClose }
 
   const handleDeleteChat = async (chatId, e) => {
     e.stopPropagation();
-    console.log('Delete chat requested for ID:', chatId);
     
     if (window.confirm('Are you sure you want to delete this chat?')) {
       try {
-        console.log('Calling deleteChat function...');
         await deleteChat(chatId);
-        console.log('Chat deleted successfully');
         
         if (currentChatId === chatId) {
-          console.log('Deleted chat was current chat, creating new chat');
           onNewChat();
         }
         
         // Show success message
         toast.success('Chat deleted successfully');
       } catch (error) {
-        console.error('Failed to delete chat:', error);
-        console.error('Error details:', error.response?.data || error.message);
         toast.error('Failed to delete chat');
       }
     }
@@ -81,7 +75,7 @@ const ChatSidebar = ({ currentChatId, onChatSelect, onNewChat, isOpen, onClose }
         onNewChat();
       }
     } catch (error) {
-      console.error('Failed to archive chat:', error);
+      // Silent error handling
     }
     setActiveDropdown(null);
   };
@@ -91,7 +85,7 @@ const ChatSidebar = ({ currentChatId, onChatSelect, onNewChat, isOpen, onClose }
     try {
       await unarchiveChat(chatId);
     } catch (error) {
-      console.error('Failed to unarchive chat:', error);
+      // Silent error handling
     }
     setActiveDropdown(null);
   };

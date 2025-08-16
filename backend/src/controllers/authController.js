@@ -5,6 +5,7 @@ import User from '../models/User.js';
 import Session from '../models/Session.js';
 import { sendSuccess, sendError } from '../utils/response.js';
 import asyncHandler from '../utils/asyncHandler.js';
+import logger from '../utils/logger.js';
 
 /**
  * Generate JWT tokens
@@ -152,7 +153,7 @@ export const register = asyncHandler(async (req, res) => {
     }, 'User registered successfully', 201);
 
   } catch (error) {
-    console.error('Registration error:', error);
+    logger.error('Registration error:', error.message);
     sendError(res, 'Registration failed', 500);
   }
 });
@@ -227,7 +228,7 @@ export const login = asyncHandler(async (req, res) => {
     }, 'Login successful');
 
   } catch (error) {
-    console.error('Login error:', error);
+    logger.error('Login error:', error.message);
     sendError(res, 'Login failed', 500);
   }
 });
@@ -249,7 +250,7 @@ export const logout = asyncHandler(async (req, res) => {
 
     sendSuccess(res, null, 'Logout successful');
   } catch (error) {
-    console.error('Logout error:', error);
+    logger.error('Logout error:', error.message);
     sendError(res, 'Logout failed', 500);
   }
 });
@@ -269,7 +270,7 @@ export const logoutAll = asyncHandler(async (req, res) => {
 
     sendSuccess(res, null, 'Logged out from all devices');
   } catch (error) {
-    console.error('Logout all error:', error);
+    logger.error('Logout all error:', error.message);
     sendError(res, 'Logout failed', 500);
   }
 });
@@ -300,7 +301,7 @@ export const refreshToken = asyncHandler(async (req, res) => {
     }, 'Token refreshed successfully');
 
   } catch (error) {
-    console.error('Token refresh error:', error);
+    logger.error('Token refresh error:', error.message);
     sendError(res, 'Token refresh failed', 500);
   }
 });
@@ -343,7 +344,7 @@ export const getSessions = asyncHandler(async (req, res) => {
 
     sendSuccess(res, { sessions: sessionData }, 'Sessions retrieved successfully');
   } catch (error) {
-    console.error('Get sessions error:', error);
+    logger.error('Get sessions error:', error.message);
     sendError(res, 'Failed to retrieve sessions', 500);
   }
 });

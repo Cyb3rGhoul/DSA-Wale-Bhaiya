@@ -70,12 +70,8 @@ export const sendMessageToBrother = async (userMessage) => {
   try {
     // Check if API key exists
     if (!GEMINI_API_KEY) {
-      console.error('Gemini API key is missing');
       return "API key missing hai bhai! 🔑 .env file mein VITE_GEMINI_API_KEY add kar.";
     }
-
-    console.log('API Key exists:', GEMINI_API_KEY ? 'Yes' : 'No');
-    console.log('API URL:', GEMINI_API_URL);
 
     // Keep conversation history manageable (last 10 messages)
     if (conversationHistory.length > 12) { // 2 initial + 10 messages
@@ -92,9 +88,6 @@ export const sendMessageToBrother = async (userMessage) => {
       parts: [{ text: userMessage }]
     });
 
-    console.log('Conversation history length:', conversationHistory.length);
-    console.log('Sending request to Gemini API...');
-    
     const requestData = {
       contents: conversationHistory,
       generationConfig: {
@@ -104,8 +97,6 @@ export const sendMessageToBrother = async (userMessage) => {
       }
     };
 
-    console.log('Request data:', JSON.stringify(requestData, null, 2));
-
     const response = await axios.post(GEMINI_API_URL, requestData, {
       headers: {
         'Content-Type': 'application/json'
@@ -113,11 +104,7 @@ export const sendMessageToBrother = async (userMessage) => {
       timeout: 30000 // 30 second timeout
     });
 
-    console.log('Gemini API response received:', response.status);
-    console.log('Response data:', response.data);
-
     if (!response.data.candidates || !response.data.candidates[0]) {
-      console.error('Invalid response structure:', response.data);
       return "Arre bhai, response mein kuch issue hai! 😅 Try again kar.";
     }
 
@@ -131,33 +118,23 @@ export const sendMessageToBrother = async (userMessage) => {
 
     return botResponse;
   } catch (error) {
-    console.error('Gemini API Error:', error);
-    console.error('Error response:', error.response);
-    console.error('Error details:', error.response?.data || error.message);
-    
     if (error.code === 'ECONNABORTED') {
-      console.error('Request timeout');
       return "Request timeout ho gaya bhai! 😅 Internet connection check kar.";
     }
     
     if (error.response?.status === 400) {
-      console.error('Bad request - check input format');
-      console.error('Request data was:', error.config?.data);
       return "Arre bhai, kuch galat input diya hai! 😅 Thoda check kar ke try kar.";
     }
     
     if (error.response?.status === 403) {
-      console.error('API key issue - check permissions');
       return "API key ka issue hai bhai! 🔑 .env file check kar ya key regenerate kar.";
     }
 
     if (error.response?.status === 429) {
-      console.error('Rate limit exceeded');
       return "Thoda slow down kar bhai! 😅 Rate limit exceed ho gaya. 2-3 second wait kar.";
     }
 
     if (error.response?.status === 404) {
-      console.error('Model not found - check model name');
       return "Model not found hai bhai! 😅 Model name check kar.";
     }
     

@@ -43,7 +43,6 @@ export const useChat = (chatId = null) => {
       setChatTitle(chat.title || 'New Chat');
       setCurrentChatId(chat._id);
     } catch (error) {
-      console.error('Error loading chat:', error);
       const errorMessage = 'Failed to load chat';
       setError(errorMessage);
       toast.error(errorMessage);
@@ -81,7 +80,6 @@ export const useChat = (chatId = null) => {
         return newChat;
       }
     } catch (error) {
-      console.error('Error saving chat:', error);
       const errorMessage = 'Failed to save chat';
       setError(errorMessage);
       toast.error(errorMessage);
@@ -106,7 +104,6 @@ export const useChat = (chatId = null) => {
         setChatTitle(newChat.title);
       }
     } catch (error) {
-      console.error('Error adding message to chat:', error);
       const errorMessage = 'Failed to save message';
       setError(errorMessage);
       toast.error(errorMessage);
@@ -115,8 +112,6 @@ export const useChat = (chatId = null) => {
 
   // Send message (handles both user and bot messages)
   const sendMessage = useCallback(async (messageText) => {
-    console.log('sendMessage called with:', messageText);
-    
     if (!user) {
       const errorMessage = 'Please log in to send messages';
       setError(errorMessage);
@@ -137,17 +132,14 @@ export const useChat = (chatId = null) => {
     setError(null);
 
     try {
-      console.log('Saving user message to backend...');
       // Save user message to backend
       await addMessageToChat({
         text: messageText,
         isUser: true
       });
 
-      console.log('Sending message to Gemini API...');
       // Send message to Gemini API
       const response = await sendMessageToBrother(messageText);
-      console.log('Gemini API response:', response);
       
       // Add bot response
       const botMessage = {
@@ -159,7 +151,6 @@ export const useChat = (chatId = null) => {
 
       setMessages(prev => [...prev, botMessage]);
 
-      console.log('Saving bot message to backend...');
       // Save bot message to backend
       await addMessageToChat({
         text: response,
@@ -176,14 +167,11 @@ export const useChat = (chatId = null) => {
           await chatService.updateChat(currentChatId, { title: newTitle });
           setChatTitle(newTitle);
         } catch (error) {
-          console.error('Error updating chat title:', error);
+          // Silent error for title update
         }
       }
 
     } catch (error) {
-      console.error('Error sending message:', error);
-      console.error('Error details:', error.response?.data || error.message);
-      
       const errorMessage = `Failed to send message: ${error.message}`;
       setError(errorMessage);
       toast.error(errorMessage);
@@ -225,7 +213,6 @@ export const useChat = (chatId = null) => {
       await chatService.deleteChat(currentChatId);
       clearChat();
     } catch (error) {
-      console.error('Error deleting chat:', error);
       const errorMessage = 'Failed to delete chat';
       setError(errorMessage);
       toast.error(errorMessage);
@@ -240,7 +227,6 @@ export const useChat = (chatId = null) => {
       await chatService.archiveChat(currentChatId);
       clearChat();
     } catch (error) {
-      console.error('Error archiving chat:', error);
       const errorMessage = 'Failed to archive chat';
       setError(errorMessage);
       toast.error(errorMessage);

@@ -106,7 +106,6 @@ export const AuthProvider = ({ children }) => {
         dispatch({ type: AUTH_ACTIONS.LOGOUT });
       }
     } catch (error) {
-      console.error('Auth check failed:', error);
       dispatch({ type: AUTH_ACTIONS.LOGOUT });
     } finally {
       dispatch({ type: AUTH_ACTIONS.SET_LOADING, payload: false });
@@ -186,7 +185,6 @@ export const AuthProvider = ({ children }) => {
       await authService.logout();
       toast('You have been logged out successfully', { icon: 'ℹ️' });
     } catch (error) {
-      console.error('Logout error:', error);
       toast.error('Error during logout, but you have been logged out locally');
     } finally {
       dispatch({ type: AUTH_ACTIONS.LOGOUT });
@@ -197,7 +195,7 @@ export const AuthProvider = ({ children }) => {
     try {
       await authService.logoutAll();
     } catch (error) {
-      console.error('Logout all error:', error);
+      // Silent error handling for logout all
     } finally {
       dispatch({ type: AUTH_ACTIONS.LOGOUT });
     }

@@ -13,12 +13,12 @@ const validateEnv = () => {
   const missing = requiredEnvVars.filter(envVar => !process.env[envVar]);
   
   if (missing.length > 0) {
-    console.error('❌ Missing required environment variables:', missing.join(', '));
-    
     if (process.env.NODE_ENV === 'production') {
+      console.error('Missing required environment variables:', missing.join(', '));
       process.exit(1);
     } else {
-      console.warn('⚠️ Running in development mode with missing environment variables');
+      // Only show in development
+      console.warn('Running in development mode with missing environment variables:', missing.join(', '));
     }
   }
 };

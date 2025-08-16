@@ -28,7 +28,6 @@ export const useChatHistory = () => {
         setArchivedChats(archivedResponse.data.chats || []);
       }
     } catch (error) {
-      console.error('Error loading chats:', error);
       const errorMessage = 'Failed to load chat history';
       setError(errorMessage);
       toast.error(errorMessage);
@@ -58,7 +57,6 @@ export const useChatHistory = () => {
       
       return newChat;
     } catch (error) {
-      console.error('Error creating chat:', error);
       const errorMessage = 'Failed to create chat';
       setError(errorMessage);
       toast.error(errorMessage);
@@ -79,7 +77,6 @@ export const useChatHistory = () => {
       
       return updatedChat;
     } catch (error) {
-      console.error('Error updating chat:', error);
       const errorMessage = 'Failed to update chat';
       setError(errorMessage);
       toast.error(errorMessage);
@@ -89,33 +86,14 @@ export const useChatHistory = () => {
 
   // Delete chat
   const deleteChat = useCallback(async (chatId) => {
-    console.log('useChatHistory: deleteChat called with ID:', chatId);
-    
     try {
-      console.log('useChatHistory: calling chatService.deleteChat...');
       const response = await chatService.deleteChat(chatId);
-      console.log('useChatHistory: deleteChat response:', response);
       
       // Remove from local state
-      console.log('useChatHistory: removing chat from local state');
-      setChats(prev => {
-        const filtered = prev.filter(chat => chat._id !== chatId);
-        console.log('useChatHistory: active chats before filter:', prev.length, 'after filter:', filtered.length);
-        return filtered;
-      });
+      setChats(prev => prev.filter(chat => chat._id !== chatId));
+      setArchivedChats(prev => prev.filter(chat => chat._id !== chatId));
       
-      setArchivedChats(prev => {
-        const filtered = prev.filter(chat => chat._id !== chatId);
-        console.log('useChatHistory: archived chats before filter:', prev.length, 'after filter:', filtered.length);
-        return filtered;
-      });
-      
-      console.log('useChatHistory: chat deleted successfully');
     } catch (error) {
-      console.error('useChatHistory: Error deleting chat:', error);
-      console.error('useChatHistory: Error response:', error.response?.data);
-      console.error('useChatHistory: Error status:', error.response?.status);
-      
       const errorMessage = `Failed to delete chat: ${error.response?.data?.message || error.message}`;
       setError(errorMessage);
       toast.error(errorMessage);
@@ -133,7 +111,6 @@ export const useChatHistory = () => {
       setChats(prev => prev.filter(chat => chat._id !== chatId));
       setArchivedChats(prev => [archivedChat, ...prev]);
     } catch (error) {
-      console.error('Error archiving chat:', error);
       const errorMessage = 'Failed to archive chat';
       setError(errorMessage);
       toast.error(errorMessage);
@@ -151,7 +128,6 @@ export const useChatHistory = () => {
       setArchivedChats(prev => prev.filter(chat => chat._id !== chatId));
       setChats(prev => [unarchivedChat, ...prev]);
     } catch (error) {
-      console.error('Error unarchiving chat:', error);
       const errorMessage = 'Failed to unarchive chat';
       setError(errorMessage);
       toast.error(errorMessage);

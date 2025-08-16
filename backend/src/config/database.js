@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
+import logger from '../utils/logger.js';
 
 dotenv.config();
 
@@ -9,40 +10,40 @@ const connectDB = async () => {
       // Remove deprecated options that are now defaults in Mongoose 6+
     });
 
-    console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
+    logger.database(`MongoDB Connected: ${conn.connection.host}`);
     
     // Handle connection events
     mongoose.connection.on('error', (err) => {
-      console.error('❌ MongoDB connection error:', err);
+      logger.error('MongoDB connection error:', err);
     });
 
     mongoose.connection.on('disconnected', () => {
-      console.warn('⚠️ MongoDB disconnected');
+      logger.warn('MongoDB disconnected');
     });
 
     mongoose.connection.on('reconnected', () => {
-      console.log('🔄 MongoDB reconnected');
+      logger.database('MongoDB reconnected');
     });
 
     // Graceful shutdown
     process.on('SIGINT', async () => {
       try {
         await mongoose.connection.close();
-        console.log('🔒 MongoDB connection closed through app termination');
+        logger.database('MongoDB connection closed through app termination');
         process.exit(0);
       } catch (err) {
-        console.error('❌ Error during MongoDB disconnection:', err);
+        logger.error('Error during MongoDB disconnection:', err);
         process.exit(1);
       }
     });
 
     return conn;
   } catch (error) {
-    console.error('❌ MongoDB connection failed:', error.message);
+    logger.error('MongoDB connection failed:', error.message);
     
     // In development, we might want to continue without DB for testing
     if (process.env.NODE_ENV === 'development') {
-      console.warn('⚠️ Running in development mode without database connection');
+      logger.warn('Running in development mode without database connection');
       return null;
     }
     

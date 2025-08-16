@@ -1,4 +1,5 @@
 import axios from 'axios';
+import logger from '../utils/logger.js';
 
 // Create axios instance with base configuration
 const api = axios.create({
@@ -17,9 +18,14 @@ api.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    
+    // Log API requests only in development
+    logger.apiRequest(config.method?.toUpperCase() || 'GET', config.url, config.data);
+    
     return config;
   },
   (error) => {
+    logger.apiError('REQUEST', error.config?.url || 'unknown', error);
     return Promise.reject(error);
   }
 );
@@ -27,9 +33,22 @@ api.interceptors.request.use(
 // Response interceptor to handle token refresh
 api.interceptors.response.use(
   (response) => {
+    // Log API responses only in development
+    logger.apiResponse(
+      response.config.method?.toUpperCase() || 'GET',
+      response.config.url,
+      response.status,
+      response.data
+    );
     return response;
   },
   async (error) => {
+    // Log API errors
+    logger.apiError(
+      error.config?.method?.toUpperCase() || 'UNKNOWN',
+      error.config?.url || 'unknown',
+      error
+    );
     const originalRequest = error.config;
 
     // If we get a 401 and haven't already tried to refresh
@@ -105,7 +124,7 @@ export const authService = {
     try {
       await api.post('/auth/logout');
     } catch (error) {
-      console.error('Logout error:', error);
+      // Silent error handling - logout should always clear local storage
     } finally {
       // Always clear local storage
       localStorage.removeItem('accessToken');
@@ -119,7 +138,7 @@ export const authService = {
     try {
       await api.post('/auth/logout-all');
     } catch (error) {
-      console.error('Logout all error:', error);
+      // Silent error handling - logout should always clear local storage
     } finally {
       // Always clear local storage
       localStorage.removeItem('accessToken');

@@ -1,10 +1,12 @@
+import logger from '../utils/logger.js';
+
 // Global error handling middleware
 const errorHandler = (err, req, res, next) => {
   let error = { ...err };
   error.message = err.message;
 
-  // Log error
-  console.error('Error:', err);
+  // Log error (minimal in production)
+  logger.error('Request error:', err.message);
 
   // Mongoose bad ObjectId
   if (err.name === 'CastError') {

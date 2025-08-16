@@ -1,4 +1,5 @@
 import axios from 'axios';
+import logger from '../utils/logger.js';
 
 // Create axios instance with base configuration
 const api = axios.create({
@@ -17,9 +18,14 @@ api.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    
+    // Log API requests only in development
+    logger.apiRequest(config.method?.toUpperCase() || 'GET', config.url, config.data);
+    
     return config;
   },
   (error) => {
+    logger.apiError('REQUEST', error.config?.url || 'unknown', error);
     return Promise.reject(error);
   }
 );
@@ -27,9 +33,22 @@ api.interceptors.request.use(
 // Response interceptor to handle token refresh
 api.interceptors.response.use(
   (response) => {
+    // Log API responses only in development
+    logger.apiResponse(
+      response.config.method?.toUpperCase() || 'GET',
+      response.config.url,
+      response.status,
+      response.data
+    );
     return response;
   },
   async (error) => {
+    // Log API errors
+    logger.apiError(
+      error.config?.method?.toUpperCase() || 'UNKNOWN',
+      error.config?.url || 'unknown',
+      error
+    );
     const originalRequest = error.config;
 
     // If we get a 401 and haven't already tried to refresh
@@ -128,19 +147,9 @@ export const chatService = {
    */
   async deleteChat(chatId) {
     try {
-      console.log('chatService: deleteChat called with ID:', chatId);
-      console.log('chatService: making DELETE request to:', `/chats/${chatId}`);
-      
       const response = await api.delete(`/chats/${chatId}`);
-      
-      console.log('chatService: delete response status:', response.status);
-      console.log('chatService: delete response data:', response.data);
-      
       return response.data;
     } catch (error) {
-      console.error('chatService: delete error:', error);
-      console.error('chatService: delete error response:', error.response?.data);
-      console.error('chatService: delete error status:', error.response?.status);
       throw error;
     }
   },
