@@ -1,7 +1,6 @@
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
-import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
 
@@ -34,19 +33,6 @@ if (config.nodeEnv === 'development') {
 
 // Security middleware
 app.use(helmet());
-
-// Rate limiting
-const limiter = rateLimit({
-  windowMs: config.rateLimitWindow,
-  max: config.rateLimitMax,
-  message: {
-    success: false,
-    message: 'Too many requests from this IP, please try again later.'
-  },
-  standardHeaders: true,
-  legacyHeaders: false
-});
-app.use(limiter);
 
 // CORS configuration
 app.use(cors({
@@ -137,32 +123,47 @@ app.get('/api', (req, res) => {
       auth: '/api/auth',
       chats: '/api/chats',
       users: '/api/users (coming soon)'
-    }
+    },
+    environment: config.nodeEnv,
+    timestamp: new Date().toISOString()
   };
 
-  sendSuccess(res, apiInfo, 'API information');
-});
-
-// 404 handler
-app.use('*', (req, res) => {
-  res.status(404).json({
-    error: 'Route not found',
-    message: `Cannot ${req.method} ${req.originalUrl}`
+  res.json({
+    success: true,
+    message: 'API is running',
+    data: apiInfo
   });
 });
 
-// Use custom error handler
+// 404 handler for undefined routes
+app.use('*', (req, res) => {
+  res.status(404).json({
+    success: false,
+    message: `Route ${req.originalUrl} not found`,
+    data: null
+  });
+});
+
+// Global error handler
 app.use(errorHandler);
 
 // Start server
-app.listen(PORT, '0.0.0.0', () => {
-  logger.server(`Server running on port ${PORT}`);
-  if (config.nodeEnv === 'development') {
-    logger.info(`Health check: http://localhost:${PORT}/api/health`);
-    logger.info(`Environment: ${config.nodeEnv}`);
-    logger.info(`Frontend URL: ${config.frontendUrl}`);
-    logger.info(`MongoDB URI: ${config.mongoUri.replace(/\/\/.*@/, '//***:***@')}`); // Hide credentials
-  }
+app.listen(PORT, () => {
+  logger.info(`🚀 Server running on port ${PORT}`);
+  logger.info(`🌍 Environment: ${config.nodeEnv}`);
+  logger.info(`🔗 Frontend URL: ${config.frontendUrl}`);
+  logger.info(`📊 Health check: http://localhost:${PORT}/api/health`);
+});
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  logger.info('SIGTERM received, shutting down gracefully');
+  process.exit(0);
+});
+
+process.on('SIGINT', () => {
+  logger.info('SIGINT received, shutting down gracefully');
+  process.exit(0);
 });
 
 export default app;

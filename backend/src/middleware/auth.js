@@ -11,45 +11,66 @@ import asyncHandler from '../utils/asyncHandler.js';
  */
 export const authenticate = asyncHandler(async (req, res, next) => {
   let token;
+  let tokenSource = 'none';
 
-  // Check for token in Authorization header
+  // Check for token in Authorization header (Bearer token)
   if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
     token = req.headers.authorization.split(' ')[1];
+    tokenSource = 'header';
   }
   // Check for token in cookies (for browser requests)
   else if (req.cookies && req.cookies.token) {
     token = req.cookies.token;
+    tokenSource = 'cookie';
   }
 
+  console.log('🔐 Auth middleware - Token source:', tokenSource, 'Token exists:', !!token);
+  console.log('🔐 Headers:', req.headers.authorization ? 'Bearer token present' : 'No Bearer token');
+  console.log('🔐 Cookies:', req.cookies ? Object.keys(req.cookies) : 'No cookies');
+
   if (!token) {
+    console.log('❌ No token found in request');
     return sendError(res, 'Access denied. No token provided.', 401);
   }
 
   try {
+    console.log('🔍 Verifying token...');
     // Verify token
     const decoded = jwt.verify(token, config.jwtSecret);
+    console.log('✅ Token verified, userId:', decoded.userId);
     
     // Find active session with this token
+    console.log('🔍 Looking for active session...');
     const session = await Session.findActiveByToken(token);
     if (!session) {
+      console.log('❌ No active session found for token');
       return sendError(res, 'Invalid or expired session.', 401);
     }
+    console.log('✅ Active session found:', session._id);
 
     // Check if user is still active
+    console.log('🔍 Checking user status...');
     const user = await User.findById(decoded.userId);
     if (!user || !user.isActive) {
+      console.log('❌ User not found or inactive:', !!user, user?.isActive);
       // Deactivate session if user is inactive
-      await session.deactivate();
+      if (session) {
+        await session.deactivate();
+      }
       return sendError(res, 'User account is inactive.', 401);
     }
+    console.log('✅ User is active:', user.email);
 
     // Attach user and session to request
     req.user = user;
     req.session = session;
     req.token = token;
 
+    console.log('✅ Authentication successful for user:', user.email);
     next();
   } catch (error) {
+    console.error('❌ Authentication error:', error);
+    
     if (error.name === 'JsonWebTokenError') {
       return sendError(res, 'Invalid token.', 401);
     } else if (error.name === 'TokenExpiredError') {

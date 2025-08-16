@@ -39,11 +39,7 @@ const config = {
   jwtRefreshExpire: process.env.JWT_REFRESH_EXPIRE || '7d',
   
   // Security
-  bcryptSaltRounds: parseInt(process.env.BCRYPT_SALT_ROUNDS) || 12,
-  
-  // Rate limiting
-  rateLimitWindow: 15 * 60 * 1000, // 15 minutes
-  rateLimitMax: 100 // requests per window
+  bcryptSaltRounds: parseInt(process.env.BCRYPT_SALT_ROUNDS) || 12
 };
 
 // Validate environment on import

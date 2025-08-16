@@ -7,7 +7,8 @@ const initialState = {
   user: null,
   isAuthenticated: false,
   isLoading: true,
-  error: null
+  error: null,
+  hasCheckedAuth: false // Add flag to prevent multiple checks
 };
 
 // Action types
@@ -17,58 +18,82 @@ const AUTH_ACTIONS = {
   LOGOUT: 'LOGOUT',
   SET_ERROR: 'SET_ERROR',
   CLEAR_ERROR: 'CLEAR_ERROR',
-  UPDATE_USER: 'UPDATE_USER'
+  UPDATE_USER: 'UPDATE_USER',
+  SET_AUTH_CHECKED: 'SET_AUTH_CHECKED' // Add new action
 };
 
 // Reducer function
 const authReducer = (state, action) => {
+  console.log('🔄 AuthReducer - Action:', action.type, 'Payload:', action.payload);
+  console.log('🔄 AuthReducer - Current State:', state);
+  
+  let newState;
+  
   switch (action.type) {
     case AUTH_ACTIONS.SET_LOADING:
-      return {
+      newState = {
         ...state,
         isLoading: action.payload
       };
+      break;
     
     case AUTH_ACTIONS.LOGIN_SUCCESS:
-      return {
+      newState = {
         ...state,
         user: action.payload.user,
         isAuthenticated: true,
         isLoading: false,
-        error: null
+        error: null,
+        hasCheckedAuth: true
       };
+      break;
     
     case AUTH_ACTIONS.LOGOUT:
-      return {
+      newState = {
         ...state,
         user: null,
         isAuthenticated: false,
         isLoading: false,
-        error: null
+        error: null,
+        hasCheckedAuth: true
       };
+      break;
     
     case AUTH_ACTIONS.SET_ERROR:
-      return {
+      newState = {
         ...state,
         error: action.payload,
         isLoading: false
       };
+      break;
     
     case AUTH_ACTIONS.CLEAR_ERROR:
-      return {
+      newState = {
         ...state,
         error: null
       };
+      break;
     
     case AUTH_ACTIONS.UPDATE_USER:
-      return {
+      newState = {
         ...state,
         user: { ...state.user, ...action.payload }
       };
+      break;
+    
+    case AUTH_ACTIONS.SET_AUTH_CHECKED:
+      newState = {
+        ...state,
+        hasCheckedAuth: true
+      };
+      break;
     
     default:
-      return state;
+      newState = state;
   }
+  
+  console.log('🔄 AuthReducer - New State:', newState);
+  return newState;
 };
 
 // Create context
@@ -86,17 +111,61 @@ export const useAuth = () => {
 // Auth provider component
 export const AuthProvider = ({ children }) => {
   const [state, dispatch] = useReducer(authReducer, initialState);
+  const hasInitialized = React.useRef(false);
+
+  console.log('🔄 AuthProvider render - State:', state);
 
   // Check if user is authenticated on app load
   useEffect(() => {
-    checkAuthStatus();
-  }, []);
+    // Prevent multiple executions due to React.StrictMode
+    if (hasInitialized.current) {
+      console.log('⏭️ Already initialized, skipping');
+      return;
+    }
+    hasInitialized.current = true;
+    
+    console.log('🔍 AuthContext useEffect triggered:', { 
+      hasCheckedAuth: state.hasCheckedAuth, 
+      isLoading: state.isLoading,
+      isAuthenticated: state.isAuthenticated 
+    });
+    
+    // Only check auth if we haven't checked before and there's a token
+    const token = localStorage.getItem('accessToken');
+    console.log('🔑 Token found:', !!token);
+    
+    if (!state.hasCheckedAuth && token) {
+      console.log('✅ Checking auth status with token');
+      checkAuthStatus();
+    } else if (!state.hasCheckedAuth && !token) {
+      console.log('❌ No token, marking as checked and not authenticated');
+      // No token, mark as checked and set not authenticated
+      dispatch({ type: AUTH_ACTIONS.SET_AUTH_CHECKED });
+      dispatch({ type: AUTH_ACTIONS.LOGOUT });
+    } else {
+      console.log('⏭️ Auth already checked, skipping');
+    }
+  }, []); // Remove state.hasCheckedAuth from dependencies to prevent infinite loop
 
   const checkAuthStatus = async () => {
+    console.log('🔄 checkAuthStatus called, current state:', { 
+      isLoading: state.isLoading, 
+      hasCheckedAuth: state.hasCheckedAuth 
+    });
+    
+    // Prevent multiple simultaneous auth checks
+    if (state.isLoading) {
+      console.log('⏸️ Already loading, skipping auth check');
+      return;
+    }
+
     try {
+      console.log('🚀 Starting auth check...');
       dispatch({ type: AUTH_ACTIONS.SET_LOADING, payload: true });
       
       const response = await authService.getCurrentUser();
+      console.log('✅ Auth check response:', response);
+      
       if (response.success) {
         dispatch({
           type: AUTH_ACTIONS.LOGIN_SUCCESS,
@@ -106,6 +175,9 @@ export const AuthProvider = ({ children }) => {
         dispatch({ type: AUTH_ACTIONS.LOGOUT });
       }
     } catch (error) {
+      console.error('❌ Auth check failed:', error);
+      // If auth check fails, clear token and mark as not authenticated
+      localStorage.removeItem('accessToken');
       dispatch({ type: AUTH_ACTIONS.LOGOUT });
     } finally {
       dispatch({ type: AUTH_ACTIONS.SET_LOADING, payload: false });
@@ -218,6 +290,7 @@ export const AuthProvider = ({ children }) => {
     isAuthenticated: state.isAuthenticated,
     isLoading: state.isLoading,
     error: state.error,
+    hasCheckedAuth: state.hasCheckedAuth, // Add this missing field
     
     // Actions
     login,

@@ -118,6 +118,10 @@ export const register = asyncHandler(async (req, res) => {
     // Generate tokens
     const { accessToken, refreshToken } = generateTokens(user._id);
     const { refreshTokenExpiry } = getTokenExpirationTimes();
+    
+    console.log('🔑 Generated tokens for new user:', user.email);
+    console.log('🔑 Access token length:', accessToken.length);
+    console.log('🔑 Refresh token length:', refreshToken.length);
 
     // Create session
     const session = new Session({
@@ -129,13 +133,16 @@ export const register = asyncHandler(async (req, res) => {
       ipAddress: req.ip
     });
 
+    console.log('💾 Creating session for new user:', user._id);
     await session.save();
+    console.log('✅ Session created successfully:', session._id);
 
     // Update user's last login
     await user.updateLastLogin();
 
     // Set cookies
     setAuthCookies(res, accessToken, refreshToken);
+    console.log('🍪 Cookies set successfully');
 
     // Return user data (password excluded by model transform)
     const userData = {
@@ -146,9 +153,11 @@ export const register = asyncHandler(async (req, res) => {
       createdAt: user.createdAt
     };
 
+    console.log('📤 Sending response with tokens');
     sendSuccess(res, {
       user: userData,
       accessToken,
+      refreshToken,
       expiresIn: config.jwtExpire
     }, 'User registered successfully', 201);
 
@@ -193,6 +202,10 @@ export const login = asyncHandler(async (req, res) => {
     // Generate tokens
     const { accessToken, refreshToken } = generateTokens(user._id);
     const { refreshTokenExpiry } = getTokenExpirationTimes();
+    
+    console.log('🔑 Generated tokens for user:', user.email);
+    console.log('🔑 Access token length:', accessToken.length);
+    console.log('🔑 Refresh token length:', refreshToken.length);
 
     // Create session
     const session = new Session({
@@ -204,13 +217,16 @@ export const login = asyncHandler(async (req, res) => {
       ipAddress: req.ip
     });
 
+    console.log('💾 Creating session for user:', user._id);
     await session.save();
+    console.log('✅ Session created successfully:', session._id);
 
     // Update user's last login
     await user.updateLastLogin();
 
     // Set cookies
     setAuthCookies(res, accessToken, refreshToken);
+    console.log('🍪 Cookies set successfully');
 
     // Return user data (password excluded by model transform)
     const userData = {
@@ -221,9 +237,11 @@ export const login = asyncHandler(async (req, res) => {
       lastLogin: user.lastLogin
     };
 
+    console.log('📤 Sending response with tokens');
     sendSuccess(res, {
       user: userData,
       accessToken,
+      refreshToken,
       expiresIn: config.jwtExpire
     }, 'Login successful');
 
@@ -282,21 +300,32 @@ export const logoutAll = asyncHandler(async (req, res) => {
  */
 export const refreshToken = asyncHandler(async (req, res) => {
   try {
+    console.log('🔄 Refreshing tokens for user:', req.user.email);
+    console.log('🔄 Current session:', req.session._id);
+    
     // Generate new tokens
     const { accessToken, refreshToken: newRefreshToken } = generateTokens(req.user._id);
     const { refreshTokenExpiry } = getTokenExpirationTimes();
+    
+    console.log('🔑 Generated new tokens');
+    console.log('🔑 New access token length:', accessToken.length);
+    console.log('🔑 New refresh token length:', newRefreshToken.length);
 
     // Update session with new tokens
     req.session.token = accessToken;
     req.session.refreshToken = newRefreshToken;
     req.session.expiresAt = refreshTokenExpiry;
     await req.session.save();
+    console.log('✅ Session updated with new tokens');
 
     // Set new cookies
     setAuthCookies(res, accessToken, newRefreshToken);
+    console.log('🍪 New cookies set');
 
+    console.log('📤 Sending response with new tokens');
     sendSuccess(res, {
       accessToken,
+      refreshToken: newRefreshToken,
       expiresIn: config.jwtExpire
     }, 'Token refreshed successfully');
 

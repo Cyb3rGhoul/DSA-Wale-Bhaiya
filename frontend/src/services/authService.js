@@ -34,8 +34,14 @@ api.interceptors.request.use(
   (config) => {
     // Token is handled via cookies, but we can also support Authorization header
     const token = localStorage.getItem('accessToken');
+    console.log('🚀 API Request:', config.method?.toUpperCase(), config.url);
+    console.log('🔑 Token in localStorage:', !!token);
+    
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+      console.log('✅ Added Bearer token to request');
+    } else {
+      console.log('❌ No token found in localStorage');
     }
     
     // Log API requests only in development
@@ -49,62 +55,6 @@ api.interceptors.request.use(
   }
 );
 
-// Response interceptor to handle token refresh
-api.interceptors.response.use(
-  (response) => {
-    // Log API responses only in development
-    logger.apiResponse(
-      response.config.method?.toUpperCase() || 'GET',
-      response.config.url,
-      response.status,
-      response.data
-    );
-    return response;
-  },
-  async (error) => {
-    // Log API errors
-    logger.apiError(
-      error.config?.method?.toUpperCase() || 'UNKNOWN',
-      error.config?.url || 'unknown',
-      error
-    );
-
-    // Handle network errors
-    if (error.code === 'ERR_NETWORK') {
-      console.error('🔥 Network Error - Backend might be down or CORS issue');
-      return Promise.reject(error);
-    }
-    const originalRequest = error.config;
-
-    // If we get a 401 and haven't already tried to refresh
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true;
-
-      try {
-        // Try to refresh the token
-        const refreshResponse = await api.post('/auth/refresh');
-        
-        if (refreshResponse.data.success) {
-          // Store new token if provided
-          if (refreshResponse.data.data.accessToken) {
-            localStorage.setItem('accessToken', refreshResponse.data.data.accessToken);
-          }
-          
-          // Retry the original request
-          return api(originalRequest);
-        }
-      } catch (refreshError) {
-        // Refresh failed, redirect to login
-        localStorage.removeItem('accessToken');
-        window.location.href = '/login';
-        return Promise.reject(refreshError);
-      }
-    }
-
-    return Promise.reject(error);
-  }
-);
-
 export const authService = {
   /**
    * Register a new user
@@ -113,9 +63,12 @@ export const authService = {
     try {
       const response = await api.post('/auth/register', userData);
       
-      // Store token if provided
+      // Store both tokens if provided
       if (response.data.data?.accessToken) {
         localStorage.setItem('accessToken', response.data.data.accessToken);
+      }
+      if (response.data.data?.refreshToken) {
+        localStorage.setItem('refreshToken', response.data.data.refreshToken);
       }
       
       return response.data;
@@ -131,9 +84,12 @@ export const authService = {
     try {
       const response = await api.post('/auth/login', { email, password });
       
-      // Store token if provided
+      // Store both tokens if provided
       if (response.data.data?.accessToken) {
         localStorage.setItem('accessToken', response.data.data.accessToken);
+      }
+      if (response.data.data?.refreshToken) {
+        localStorage.setItem('refreshToken', response.data.data.refreshToken);
       }
       
       return response.data;
@@ -153,6 +109,7 @@ export const authService = {
     } finally {
       // Always clear local storage
       localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
     }
   },
 
@@ -167,6 +124,7 @@ export const authService = {
     } finally {
       // Always clear local storage
       localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
     }
   },
 
@@ -187,11 +145,19 @@ export const authService = {
    */
   async refreshToken() {
     try {
-      const response = await api.post('/auth/refresh');
+      const refreshToken = localStorage.getItem('refreshToken');
+      if (!refreshToken) {
+        throw new Error('No refresh token available');
+      }
+
+      const response = await api.post('/auth/refresh', { refreshToken });
       
-      // Store new token if provided
+      // Store new tokens if provided
       if (response.data.data?.accessToken) {
         localStorage.setItem('accessToken', response.data.data.accessToken);
+      }
+      if (response.data.data?.refreshToken) {
+        localStorage.setItem('refreshToken', response.data.data.refreshToken);
       }
       
       return response.data;
@@ -228,9 +194,82 @@ export const authService = {
   },
 
   /**
+   * Get stored refresh token
+   */
+  getRefreshToken() {
+    return localStorage.getItem('refreshToken');
+  },
+
+  /**
    * Clear stored tokens
    */
   clearTokens() {
     localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
   }
 };
+
+// Response interceptor to handle token refresh (moved after authService definition)
+api.interceptors.response.use(
+  (response) => {
+    console.log('✅ API Response:', response.config.method?.toUpperCase(), response.config.url, response.status);
+    
+    // Log API responses only in development
+    logger.apiResponse(
+      response.config.method?.toUpperCase() || 'GET',
+      response.config.url,
+      response.status,
+      response.data
+    );
+    return response;
+  },
+  async (error) => {
+    console.log('❌ API Error:', error.config?.method?.toUpperCase(), error.config?.url, error.response?.status);
+    console.log('❌ Error details:', error.response?.data);
+    
+    // Log API errors
+    logger.apiError(
+      error.config?.method?.toUpperCase() || 'UNKNOWN',
+      error.config?.url || 'unknown',
+      error
+    );
+
+    // Handle network errors
+    if (error.code === 'ERR_NETWORK') {
+      console.error('🔥 Network Error - Backend might be down or CORS issue');
+      return Promise.reject(error);
+    }
+    
+    const originalRequest = error.config;
+
+    // If we get a 401 and haven't already tried to refresh
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      console.log('🔄 Got 401, attempting token refresh...');
+      originalRequest._retry = true;
+
+      try {
+        // Try to refresh the token using the auth service
+        const refreshResponse = await authService.refreshToken();
+        
+        if (refreshResponse.success) {
+          console.log('✅ Token refresh successful');
+          
+          // Retry the original request with new token
+          const newToken = localStorage.getItem('accessToken');
+          if (newToken) {
+            originalRequest.headers.Authorization = `Bearer ${newToken}`;
+            console.log('🔄 Retrying original request with new token');
+            return api(originalRequest);
+          }
+        }
+      } catch (refreshError) {
+        console.log('❌ Token refresh failed:', refreshError.response?.status);
+        // Refresh failed, clear tokens and reject
+        authService.clearTokens();
+        return Promise.reject(refreshError);
+      }
+    }
+
+    return Promise.reject(error);
+  }
+);
