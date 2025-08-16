@@ -19,15 +19,27 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist',
-    sourcemap: false, // Disable source maps in production for better performance
-    minify: 'terser',
+    sourcemap: false,
+    minify: 'esbuild',
+    target: 'es2015',
     rollupOptions: {
       output: {
-        manualChunks: {
-          vendor: ['react', 'react-dom'],
-          router: ['react-router-dom'],
-          ui: ['lucide-react', 'react-hot-toast'],
-          utils: ['axios', 'clsx', 'tailwind-merge']
+        manualChunks: (id) => {
+          if (id.includes('node_modules')) {
+            if (id.includes('react') || id.includes('react-dom')) {
+              return 'vendor';
+            }
+            if (id.includes('react-router')) {
+              return 'router';
+            }
+            if (id.includes('lucide-react') || id.includes('react-hot-toast')) {
+              return 'ui';
+            }
+            if (id.includes('axios') || id.includes('clsx') || id.includes('tailwind-merge')) {
+              return 'utils';
+            }
+            return 'vendor';
+          }
         }
       }
     },
