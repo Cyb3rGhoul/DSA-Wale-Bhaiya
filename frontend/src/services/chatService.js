@@ -2,8 +2,17 @@ import axios from 'axios';
 import logger from '../utils/logger.js';
 
 // Create axios instance with base configuration
+const getApiBaseURL = () => {
+  // In production, use the environment variable
+  if (import.meta.env.PROD) {
+    return import.meta.env.VITE_API_URL || 'https://your-backend-url.onrender.com/api';
+  }
+  // In development, use proxy or localhost
+  return import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+};
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3001/api',
+  baseURL: getApiBaseURL(),
   withCredentials: true, // Include cookies in requests
   headers: {
     'Content-Type': 'application/json'

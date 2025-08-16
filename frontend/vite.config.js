@@ -16,5 +16,25 @@ export default defineConfig({
         secure: false,
       }
     }
+  },
+  build: {
+    outDir: 'dist',
+    sourcemap: false, // Disable source maps in production for better performance
+    minify: 'terser',
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+          router: ['react-router-dom'],
+          ui: ['lucide-react', 'react-hot-toast'],
+          utils: ['axios', 'clsx', 'tailwind-merge']
+        }
+      }
+    },
+    chunkSizeWarningLimit: 1000
+  },
+  preview: {
+    port: 4173,
+    host: true
   }
 })
