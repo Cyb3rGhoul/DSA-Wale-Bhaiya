@@ -11,16 +11,20 @@ export const validateRegister = [
   
   body('password')
     .isLength({ min: 6 })
-    .withMessage('Password must be at least 6 characters long')
-    .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
-    .withMessage('Password must contain at least one lowercase letter, one uppercase letter, and one number'),
+    .withMessage('Password must be at least 6 characters long'),
   
   body('name')
     .trim()
     .isLength({ min: 2, max: 50 })
     .withMessage('Name must be between 2 and 50 characters')
     .matches(/^[a-zA-Z\s]+$/)
-    .withMessage('Name can only contain letters and spaces')
+    .withMessage('Name can only contain letters and spaces'),
+  
+  body('geminiApiKey')
+    .notEmpty()
+    .withMessage('Gemini API key is required')
+    .matches(/^AIza[0-9A-Za-z-_]{35}$/)
+    .withMessage('Please provide a valid Gemini API key')
 ];
 
 /**
@@ -76,7 +80,12 @@ export const validateProfileUpdate = [
     .optional()
     .isEmail()
     .normalizeEmail()
-    .withMessage('Please provide a valid email address')
+    .withMessage('Please provide a valid email address'),
+  
+  body('geminiApiKey')
+    .optional()
+    .matches(/^AIza[0-9A-Za-z-_]{35}$/)
+    .withMessage('Please provide a valid Gemini API key')
 ];
 
 /**
@@ -152,7 +161,23 @@ export const validateUpdateChat = [
   body('isArchived')
     .optional()
     .isBoolean()
-    .withMessage('isArchived must be a boolean value')
+    .withMessage('isArchived must be a boolean value'),
+  
+  body('messages')
+    .optional()
+    .isArray()
+    .withMessage('Messages must be an array'),
+  
+  body('messages.*.text')
+    .if(body('messages').exists())
+    .trim()
+    .isLength({ min: 1, max: 5000 })
+    .withMessage('Message text must be between 1 and 5000 characters'),
+  
+  body('messages.*.isUser')
+    .if(body('messages').exists())
+    .isBoolean()
+    .withMessage('isUser must be a boolean value')
 ];
 
 /**

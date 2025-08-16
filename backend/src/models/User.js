@@ -29,6 +29,11 @@ const userSchema = new mongoose.Schema({
     type: String,
     default: null
   },
+  geminiApiKey: {
+    type: String,
+    default: null,
+    select: false // Don't include API key in queries by default for security
+  },
   lastLogin: {
     type: Date,
     default: null
@@ -88,6 +93,16 @@ userSchema.statics.findByEmailWithPassword = function(email) {
 // Static method to find active users
 userSchema.statics.findActiveUsers = function() {
   return this.find({ isActive: true });
+};
+
+// Static method to find user by email with API key (for chat functionality)
+userSchema.statics.findByEmailWithApiKey = function(email) {
+  return this.findOne({ email }).select('+geminiApiKey');
+};
+
+// Static method to find user by ID with API key (for chat functionality)
+userSchema.statics.findByIdWithApiKey = function(userId) {
+  return this.findById(userId).select('+geminiApiKey');
 };
 
 const User = mongoose.model('User', userSchema);

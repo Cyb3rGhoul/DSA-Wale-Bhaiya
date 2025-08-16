@@ -206,6 +206,30 @@ export const authService = {
   clearTokens() {
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
+  },
+
+  /**
+   * Update user profile
+   */
+  async updateProfile(profileData) {
+    try {
+      const response = await api.put('/auth/profile', profileData);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  /**
+   * Get user profile with API key for chat functionality
+   */
+  async getProfileForChat() {
+    try {
+      const response = await api.get('/auth/profile/chat');
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
   }
 };
 

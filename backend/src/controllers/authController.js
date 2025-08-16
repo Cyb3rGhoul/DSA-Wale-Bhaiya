@@ -97,7 +97,7 @@ export const register = asyncHandler(async (req, res) => {
     return sendError(res, 'Validation failed', 400, errors.array());
   }
 
-  const { email, password, name } = req.body;
+  const { email, password, name, geminiApiKey } = req.body;
 
   // Check if user already exists
   const existingUser = await User.findOne({ email });
@@ -110,7 +110,8 @@ export const register = asyncHandler(async (req, res) => {
     const user = new User({
       email,
       password,
-      name
+      name,
+      geminiApiKey
     });
 
     await user.save();
@@ -140,17 +141,21 @@ export const register = asyncHandler(async (req, res) => {
     // Update user's last login
     await user.updateLastLogin();
 
+    // Get user with API key for response
+    const userWithApiKey = await User.findByIdWithApiKey(user._id);
+
     // Set cookies
     setAuthCookies(res, accessToken, refreshToken);
     console.log('🍪 Cookies set successfully');
 
     // Return user data (password excluded by model transform)
     const userData = {
-      id: user._id,
-      email: user.email,
-      name: user.name,
-      avatar: user.avatar,
-      createdAt: user.createdAt
+      id: userWithApiKey._id,
+      email: userWithApiKey.email,
+      name: userWithApiKey.name,
+      avatar: userWithApiKey.avatar,
+      geminiApiKey: userWithApiKey.geminiApiKey, // Include API key for frontend
+      createdAt: userWithApiKey.createdAt
     };
 
     console.log('📤 Sending response with tokens');
@@ -224,17 +229,22 @@ export const login = asyncHandler(async (req, res) => {
     // Update user's last login
     await user.updateLastLogin();
 
+    // Get user with API key for response
+    const userWithApiKey = await User.findByIdWithApiKey(user._id);
+
     // Set cookies
     setAuthCookies(res, accessToken, refreshToken);
     console.log('🍪 Cookies set successfully');
 
     // Return user data (password excluded by model transform)
     const userData = {
-      id: user._id,
-      email: user.email,
-      name: user.name,
-      avatar: user.avatar,
-      lastLogin: user.lastLogin
+      id: userWithApiKey._id,
+      email: userWithApiKey.email,
+      name: userWithApiKey.name,
+      avatar: userWithApiKey.avatar,
+      geminiApiKey: userWithApiKey.geminiApiKey, // Include API key for frontend
+      lastLogin: userWithApiKey.lastLogin,
+      createdAt: userWithApiKey.createdAt
     };
 
     console.log('📤 Sending response with tokens');
@@ -341,13 +351,17 @@ export const refreshToken = asyncHandler(async (req, res) => {
  * @access  Private
  */
 export const getMe = asyncHandler(async (req, res) => {
+  // Get user with API key for frontend display
+  const user = await User.findByIdWithApiKey(req.user._id);
+  
   const userData = {
-    id: req.user._id,
-    email: req.user.email,
-    name: req.user.name,
-    avatar: req.user.avatar,
-    lastLogin: req.user.lastLogin,
-    createdAt: req.user.createdAt
+    id: user._id,
+    email: user.email,
+    name: user.name,
+    avatar: user.avatar,
+    geminiApiKey: user.geminiApiKey, // Include API key for frontend
+    lastLogin: user.lastLogin,
+    createdAt: user.createdAt
   };
 
   sendSuccess(res, { user: userData }, 'User data retrieved successfully');
@@ -375,5 +389,76 @@ export const getSessions = asyncHandler(async (req, res) => {
   } catch (error) {
     logger.error('Get sessions error:', error.message);
     sendError(res, 'Failed to retrieve sessions', 500);
+  }
+});
+
+/**
+ * @desc    Update user profile
+ * @route   PUT /api/auth/profile
+ * @access  Private
+ */
+export const updateProfile = asyncHandler(async (req, res) => {
+  try {
+    const { name, avatar, geminiApiKey } = req.body;
+    
+    // Find user with API key to update
+    const user = await User.findByIdWithApiKey(req.user._id);
+    if (!user) {
+      return sendError(res, 'User not found', 404);
+    }
+
+    // Update fields if provided
+    if (name !== undefined) user.name = name;
+    if (avatar !== undefined) user.avatar = avatar;
+    if (geminiApiKey !== undefined) user.geminiApiKey = geminiApiKey;
+
+    await user.save();
+
+    // Return updated user data (including API key for frontend)
+    const userData = {
+      id: user._id,
+      email: user.email,
+      name: user.name,
+      avatar: user.avatar,
+      geminiApiKey: user.geminiApiKey, // Include API key for frontend
+      lastLogin: user.lastLogin,
+      createdAt: user.createdAt
+    };
+
+    sendSuccess(res, { user: userData }, 'Profile updated successfully');
+  } catch (error) {
+    logger.error('Profile update error:', error.message);
+    sendError(res, 'Profile update failed', 500);
+  }
+});
+
+/**
+ * @desc    Get user profile with API key (for chat functionality)
+ * @route   GET /api/auth/profile/chat
+ * @access  Private
+ */
+export const getProfileForChat = asyncHandler(async (req, res) => {
+  try {
+    // Find user with API key for chat functionality
+    const user = await User.findByIdWithApiKey(req.user._id);
+    if (!user) {
+      return sendError(res, 'User not found', 404);
+    }
+
+    // Return user data including API key for chat
+    const userData = {
+      id: user._id,
+      email: user.email,
+      name: user.name,
+      avatar: user.avatar,
+      geminiApiKey: user.geminiApiKey,
+      lastLogin: user.lastLogin,
+      createdAt: user.createdAt
+    };
+
+    sendSuccess(res, { user: userData }, 'Profile retrieved successfully');
+  } catch (error) {
+    logger.error('Get profile for chat error:', error.message);
+    sendError(res, 'Failed to retrieve profile', 500);
   }
 });

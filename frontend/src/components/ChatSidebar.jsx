@@ -74,8 +74,9 @@ const ChatSidebar = ({ currentChatId, onChatSelect, onNewChat, isOpen, onClose }
       if (currentChatId === chatId) {
         onNewChat();
       }
+      toast.success('Chat archived successfully');
     } catch (error) {
-      // Silent error handling
+      toast.error('Failed to archive chat');
     }
     setActiveDropdown(null);
   };
@@ -84,8 +85,9 @@ const ChatSidebar = ({ currentChatId, onChatSelect, onNewChat, isOpen, onClose }
     e.stopPropagation();
     try {
       await unarchiveChat(chatId);
+      toast.success('Chat unarchived successfully');
     } catch (error) {
-      // Silent error handling
+      toast.error('Failed to unarchive chat');
     }
     setActiveDropdown(null);
   };

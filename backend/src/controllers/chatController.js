@@ -132,7 +132,7 @@ export const updateChat = asyncHandler(async (req, res) => {
 
   try {
     const { id } = req.params;
-    const { title, isArchived } = req.body;
+    const { title, isArchived, messages } = req.body;
 
     const chat = await Chat.findOne({ 
       _id: id, 
@@ -149,6 +149,9 @@ export const updateChat = asyncHandler(async (req, res) => {
     }
     if (isArchived !== undefined) {
       chat.isArchived = isArchived;
+    }
+    if (messages !== undefined) {
+      chat.messages = messages;
     }
 
     await chat.save();

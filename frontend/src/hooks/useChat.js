@@ -39,6 +39,7 @@ export const useChat = (chatId = null) => {
       const response = await chatService.getChat(chatId);
       const chat = response.data.chat;
       
+      // Set messages from the loaded chat
       setMessages(chat.messages || []);
       setChatTitle(chat.title || 'New Chat');
       setCurrentChatId(chat._id);
@@ -69,7 +70,8 @@ export const useChat = (chatId = null) => {
       if (currentChatId) {
         // Update existing chat
         const response = await chatService.updateChat(currentChatId, {
-          title: chatData.title
+          title: chatData.title,
+          messages: chatData.messages
         });
         return response.data.chat;
       } else {
@@ -99,27 +101,29 @@ export const useChat = (chatId = null) => {
           title: 'New Chat',
           messages: [messageData]
         };
-        const newChat = await saveChat(chatData);
-        setCurrentChatId(newChat._id);
-        setChatTitle(newChat.title);
+        await saveChat(chatData);
       }
     } catch (error) {
-      const errorMessage = 'Failed to save message';
-      setError(errorMessage);
-      toast.error(errorMessage);
+      console.error('Failed to add message to chat:', error);
+      // Continue with local state even if backend save fails
     }
   }, [currentChatId, saveChat]);
 
-  // Send message (handles both user and bot messages)
+  // Send message using user's API key
   const sendMessage = useCallback(async (messageText) => {
-    if (!user) {
-      const errorMessage = 'Please log in to send messages';
-      setError(errorMessage);
-      toast.error(errorMessage);
+    // Check if user has API key
+    if (!user?.geminiApiKey) {
+      const errorMessage = {
+        id: Date.now(),
+        text: "Bhai, tumhara Gemini API key missing hai! 🔑 Profile mein jakar add kar le, tab main tujhe help kar sakta hun.",
+        isUser: false,
+        timestamp: Date.now()
+      };
+      setMessages(prev => [...prev, errorMessage]);
       return;
     }
 
-    // Add user message immediately
+    // Add user message immediately to local state
     const userMessage = {
       id: Date.now(),
       text: messageText,
@@ -133,15 +137,12 @@ export const useChat = (chatId = null) => {
 
     try {
       // Save user message to backend
-      await addMessageToChat({
-        text: messageText,
-        isUser: true
-      });
+      await addMessageToChat(userMessage);
 
-      // Send message to Gemini API
-      const response = await sendMessageToBrother(messageText);
+      // Send message to Gemini using user's API key
+      const response = await sendMessageToBrother(messageText, user.geminiApiKey);
       
-      // Add bot response
+      // Add bot response to local state
       const botMessage = {
         id: Date.now() + 1,
         text: response,
@@ -150,52 +151,42 @@ export const useChat = (chatId = null) => {
       };
 
       setMessages(prev => [...prev, botMessage]);
-
+      
       // Save bot message to backend
-      await addMessageToChat({
-        text: response,
-        isUser: false
-      });
+      await addMessageToChat(botMessage);
 
       // Update chat title if it's still "New Chat"
       if (chatTitle === 'New Chat' && currentChatId) {
-        const newTitle = messageText.length > 50 
-          ? messageText.substring(0, 50) + '...'
+        const suggestedTitle = messageText.length > 30 
+          ? messageText.substring(0, 30) + '...' 
           : messageText;
-        
-        try {
-          await chatService.updateChat(currentChatId, { title: newTitle });
-          setChatTitle(newTitle);
-        } catch (error) {
-          // Silent error for title update
-        }
+        setChatTitle(suggestedTitle);
+        await saveChat({ title: suggestedTitle });
       }
-
     } catch (error) {
-      const errorMessage = `Failed to send message: ${error.message}`;
-      setError(errorMessage);
-      toast.error(errorMessage);
+      console.error('Chat error:', error);
       
-      // Add error message
-      const botErrorMessage = {
+      // Add error message to local state
+      const errorMessage = {
         id: Date.now() + 1,
         text: "Arre yaar, kuch technical problem aa gayi! 😅 Thoda wait kar ke try kar. Main abhi busy tha! 🛠️",
         isUser: false,
         timestamp: Date.now()
       };
 
-      setMessages(prev => [...prev, botErrorMessage]);
+      setMessages(prev => [...prev, errorMessage]);
+      setError('Failed to send message. Please try again.');
     } finally {
       setIsLoading(false);
     }
-  }, [user, addMessageToChat, chatTitle, currentChatId]);
+  }, [user?.geminiApiKey, addMessageToChat, chatTitle, currentChatId, saveChat]);
 
   // Clear current chat (start new chat)
   const clearChat = useCallback(() => {
     setMessages([
       {
         id: Date.now(),
-        text: "Hey bhai! 👋 Fresh start kar rahe hain! DSA mein kya seekhna hai? 🚀",
+        text: getInitialMessage(),
         isUser: false,
         timestamp: Date.now()
       }
@@ -212,6 +203,7 @@ export const useChat = (chatId = null) => {
     try {
       await chatService.deleteChat(currentChatId);
       clearChat();
+      toast.success('Chat deleted successfully');
     } catch (error) {
       const errorMessage = 'Failed to delete chat';
       setError(errorMessage);
@@ -226,6 +218,7 @@ export const useChat = (chatId = null) => {
     try {
       await chatService.archiveChat(currentChatId);
       clearChat();
+      toast.success('Chat archived successfully');
     } catch (error) {
       const errorMessage = 'Failed to archive chat';
       setError(errorMessage);

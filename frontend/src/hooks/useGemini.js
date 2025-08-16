@@ -2,7 +2,7 @@
 import { useState, useCallback } from 'react';
 import { sendMessageToBrother, clearConversation, getInitialMessage } from '../utils/gemini';
 
-export const useGemini = () => {
+export const useGemini = (userApiKey) => {
   const [messages, setMessages] = useState([
     {
       id: Date.now(),
@@ -14,6 +14,18 @@ export const useGemini = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   const sendMessage = useCallback(async (messageText) => {
+    // Check if user has API key
+    if (!userApiKey) {
+      const errorMessage = {
+        id: Date.now() + 1,
+        text: "Bhai, tumhara Gemini API key missing hai! 🔑 Profile mein jakar add kar le, tab main tujhe help kar sakta hun.",
+        isUser: false,
+        timestamp: Date.now()
+      };
+      setMessages(prev => [...prev, errorMessage]);
+      return;
+    }
+
     // Add user message immediately
     const userMessage = {
       id: Date.now(),
@@ -26,8 +38,8 @@ export const useGemini = () => {
     setIsLoading(true);
 
     try {
-      // Send message to Gemini using axios
-      const response = await sendMessageToBrother(messageText);
+      // Send message to Gemini using user's API key
+      const response = await sendMessageToBrother(messageText, userApiKey);
       
       // Add bot response
       const botMessage = {
@@ -51,7 +63,7 @@ export const useGemini = () => {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [userApiKey]);
 
   const clearChat = useCallback(() => {
     // Clear conversation history in gemini.js

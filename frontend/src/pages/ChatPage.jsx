@@ -3,13 +3,14 @@ import { ChatMessage, ChatInput, TypingIndicator } from '../components/ChatCompo
 import ChatSidebar from '../components/ChatSidebar';
 import { useChat } from '../hooks/useChat';
 import { useAuth } from '../contexts/AuthContext';
-import UserProfile from '../components/auth/UserProfile';
-import { RefreshCcw, Brain, Code2, AlertCircle, Menu } from 'lucide-react';
+import UserProfile from '../components/UserProfile';
+import { RefreshCcw, Brain, Code2, AlertCircle, Menu, User } from 'lucide-react';
 
 function ChatPage() {
   const [currentChatId, setCurrentChatId] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { messages, isLoading, sendMessage, clearChat, error, setError } = useChat(currentChatId);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const { messages, isLoading, sendMessage, clearChat, error, setError, loadChat } = useChat(currentChatId);
   const { user } = useAuth();
   const messagesEndRef = useRef(null);
 
@@ -112,7 +113,14 @@ function ChatPage() {
               {/* User Profile */}
               {user && (
                 <div className="relative">
-                  <UserProfile />
+                  <button
+                    onClick={() => setProfileOpen(true)}
+                    className="flex items-center gap-2 px-3 py-2 text-gray-400 hover:text-gray-200 hover:bg-gray-800/60 backdrop-blur-sm rounded-xl transition-all duration-200 border border-gray-700/40 hover:border-gray-600/60 text-sm"
+                    title="User Profile"
+                  >
+                    <User size={16} />
+                    <span className="hidden md:inline font-medium">Profile</span>
+                  </button>
                 </div>
               )}
             </div>
@@ -190,6 +198,11 @@ function ChatPage() {
           </div>
         </div>
       </div>
+
+      {/* User Profile Modal */}
+      {profileOpen && (
+        <UserProfile onClose={() => setProfileOpen(false)} />
+      )}
     </div>
   );
 }

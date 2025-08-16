@@ -110,10 +110,6 @@ const RegisterForm = ({ onSuccess, onSwitchToLogin }) => {
               minLength: {
                 value: 6,
                 message: 'Password must be at least 6 characters'
-              },
-              pattern: {
-                value: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
-                message: 'Password must contain at least one lowercase letter, one uppercase letter, and one number'
               }
             })}
           />
@@ -131,8 +127,27 @@ const RegisterForm = ({ onSuccess, onSwitchToLogin }) => {
             showValidation={dirtyFields.confirmPassword}
             register={register('confirmPassword', {
               required: 'Please confirm your password',
-              validate: value =>
-                value === watchedFields.password || 'Passwords do not match'
+              validate: (value) => value === password || 'Passwords do not match'
+            })}
+          />
+
+          {/* Gemini API Key Field */}
+          <FormField
+            label="Gemini API Key"
+            name="geminiApiKey"
+            type="password"
+            placeholder="Enter your Gemini API key"
+            icon={UserPlus}
+            autoComplete="off"
+            error={errors.geminiApiKey?.message}
+            isValid={dirtyFields.geminiApiKey && !errors.geminiApiKey && watchedFields.geminiApiKey}
+            showValidation={dirtyFields.geminiApiKey}
+            register={register('geminiApiKey', {
+              required: 'Gemini API key is required',
+              pattern: {
+                value: /^AIza[0-9A-Za-z-_]{35}$/,
+                message: 'Please enter a valid Gemini API key'
+              }
             })}
           />
 

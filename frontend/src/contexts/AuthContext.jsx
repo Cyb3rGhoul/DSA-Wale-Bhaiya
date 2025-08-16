@@ -6,9 +6,9 @@ import toast from 'react-hot-toast';
 const initialState = {
   user: null,
   isAuthenticated: false,
-  isLoading: true,
+  isLoading: false, // Start with false, not true
   error: null,
-  hasCheckedAuth: false // Add flag to prevent multiple checks
+  hasCheckedAuth: false
 };
 
 // Action types
@@ -124,43 +124,26 @@ export const AuthProvider = ({ children }) => {
     }
     hasInitialized.current = true;
     
-    console.log('🔍 AuthContext useEffect triggered:', { 
-      hasCheckedAuth: state.hasCheckedAuth, 
-      isLoading: state.isLoading,
-      isAuthenticated: state.isAuthenticated 
-    });
+    console.log('🔍 AuthContext useEffect triggered');
     
-    // Only check auth if we haven't checked before and there's a token
+    // Check if there's a token and verify it
     const token = localStorage.getItem('accessToken');
     console.log('🔑 Token found:', !!token);
     
-    if (!state.hasCheckedAuth && token) {
-      console.log('✅ Checking auth status with token');
+    if (token) {
+      console.log('✅ Token found, checking auth status');
       checkAuthStatus();
-    } else if (!state.hasCheckedAuth && !token) {
+    } else {
       console.log('❌ No token, marking as checked and not authenticated');
       // No token, mark as checked and set not authenticated
       dispatch({ type: AUTH_ACTIONS.SET_AUTH_CHECKED });
-      dispatch({ type: AUTH_ACTIONS.LOGOUT });
-    } else {
-      console.log('⏭️ Auth already checked, skipping');
     }
-  }, []); // Remove state.hasCheckedAuth from dependencies to prevent infinite loop
+  }, []); // Empty dependency array
 
   const checkAuthStatus = async () => {
-    console.log('🔄 checkAuthStatus called, current state:', { 
-      isLoading: state.isLoading, 
-      hasCheckedAuth: state.hasCheckedAuth 
-    });
+    console.log('🚀 Starting auth check...');
     
-    // Prevent multiple simultaneous auth checks
-    if (state.isLoading) {
-      console.log('⏸️ Already loading, skipping auth check');
-      return;
-    }
-
     try {
-      console.log('🚀 Starting auth check...');
       dispatch({ type: AUTH_ACTIONS.SET_LOADING, payload: true });
       
       const response = await authService.getCurrentUser();
@@ -181,6 +164,7 @@ export const AuthProvider = ({ children }) => {
       dispatch({ type: AUTH_ACTIONS.LOGOUT });
     } finally {
       dispatch({ type: AUTH_ACTIONS.SET_LOADING, payload: false });
+      dispatch({ type: AUTH_ACTIONS.SET_AUTH_CHECKED });
     }
   };
 

@@ -6,7 +6,9 @@ import {
   logoutAll,
   refreshToken,
   getMe,
-  getSessions
+  getSessions,
+  updateProfile,
+  getProfileForChat
 } from '../controllers/authController.js';
 import {
   authenticate,
@@ -14,7 +16,8 @@ import {
 } from '../middleware/auth.js';
 import {
   validateRegister,
-  validateLogin
+  validateLogin,
+  validateProfileUpdate
 } from '../middleware/validation.js';
 
 const router = express.Router();
@@ -67,5 +70,19 @@ router.get('/me', authenticate, getMe);
  * @access  Private
  */
 router.get('/sessions', authenticate, getSessions);
+
+/**
+ * @desc    Update user profile
+ * @route   PUT /api/auth/profile
+ * @access  Private
+ */
+router.put('/profile', authenticate, validateProfileUpdate, updateProfile);
+
+/**
+ * @desc    Get user profile with API key (for chat functionality)
+ * @route   GET /api/auth/profile/chat
+ * @access  Private
+ */
+router.get('/profile/chat', authenticate, getProfileForChat);
 
 export default router;

@@ -1,8 +1,8 @@
 // src/utils/gemini.js
 import axios from 'axios';
 
-const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
-const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+// Remove the global API key - we'll use user's personal key
+// const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 
 const BROTHER_PROMPT = `
 You are a caring elder brother who teaches Data Structures and Algorithms (DSA). Your name is "DSA Bhai".
@@ -66,12 +66,15 @@ let conversationHistory = [
   }
 ];
 
-export const sendMessageToBrother = async (userMessage) => {
+export const sendMessageToBrother = async (userMessage, userApiKey) => {
   try {
-    // Check if API key exists
-    if (!GEMINI_API_KEY) {
-      return "API key missing hai bhai! 🔑 .env file mein VITE_GEMINI_API_KEY add kar.";
+    // Check if user API key exists
+    if (!userApiKey) {
+      return "Bhai, tumhara Gemini API key missing hai! 🔑 Profile mein jakar add kar le, tab main tujhe help kar sakta hun.";
     }
+
+    // Create API URL with user's personal key
+    const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${userApiKey}`;
 
     // Keep conversation history manageable (last 10 messages)
     if (conversationHistory.length > 12) { // 2 initial + 10 messages
@@ -150,11 +153,12 @@ export const clearConversation = () => {
     },
     {
       role: "model",
-      parts: [{ text: "Hey bhai! 👋 Fresh start kar rahe hain! DSA mein kya seekhna hai? 🚀" }]
+      parts: [{ text: "Hey bhai! 👋 Main DSA wala bhaiya hun and main tujhe DSA sikhaunga step by step. Jo bhi doubt hai, pooch le - hum saath mein solve karenge!\n\n**Kya seekhna hai aaj?** 🤔\n- Arrays aur Strings?\n- Linked Lists?\n- Trees aur Graphs?\n- Dynamic Programming?\n- Ya koi specific question hai?\n\nReady hai tu? 💪" }]
     }
   ];
 };
 
+// Function to get the initial welcome message
 export const getInitialMessage = () => {
   return "Hey bhai! 👋 Main DSA wala bhaiya hun and main tujhe DSA sikhaunga step by step. Jo bhi doubt hai, pooch le - hum saath mein solve karenge!\n\n**Kya seekhna hai aaj?** 🤔\n- Arrays aur Strings?\n- Linked Lists?\n- Trees aur Graphs?\n- Dynamic Programming?\n- Ya koi specific question hai?\n\nReady hai tu? 💪";
 };
