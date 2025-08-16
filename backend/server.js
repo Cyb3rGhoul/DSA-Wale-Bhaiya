@@ -50,10 +50,36 @@ app.use(limiter);
 
 // CORS configuration
 app.use(cors({
-  origin: config.frontendUrl,
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+
+    // In development, allow localhost on any port
+    if (config.nodeEnv === 'development') {
+      if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
+        return callback(null, true);
+      }
+    }
+
+    // Check against configured frontend URL
+    if (origin === config.frontendUrl) {
+      return callback(null, true);
+    }
+
+    // Reject other origins
+    callback(new Error('Not allowed by CORS'));
+  },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: [
+    'Content-Type',
+    'Authorization',
+    'X-Requested-With',
+    'Accept',
+    'Origin'
+  ],
+  exposedHeaders: ['Set-Cookie'],
+  optionsSuccessStatus: 200 // Some legacy browsers choke on 204
 }));
 
 // Body parsing middleware
@@ -63,11 +89,20 @@ app.use(express.urlencoded({ extended: true }));
 // Cookie parsing middleware
 app.use(cookieParser());
 
+// Handle preflight requests
+app.options('*', (req, res) => {
+  res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
+  res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS,PATCH');
+  res.header('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-Requested-With,Accept,Origin');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.sendStatus(200);
+});
+
 // Enhanced health check route
 app.get('/api/health', (req, res) => {
   const dbStatus = getDatabaseStatus();
   const isHealthy = isDatabaseHealthy();
-  
+
   const healthData = {
     status: isHealthy ? 'OK' : 'DEGRADED',
     message: 'DSA Brother Bot Backend is running',
@@ -77,10 +112,10 @@ app.get('/api/health', (req, res) => {
     uptime: process.uptime(),
     memory: process.memoryUsage()
   };
-  
+
   const statusCode = isHealthy ? 200 : 503;
   const message = isHealthy ? 'Health check successful' : 'Service degraded - database issues';
-  
+
   res.status(statusCode).json({
     success: isHealthy,
     message,
@@ -104,13 +139,13 @@ app.get('/api', (req, res) => {
       users: '/api/users (coming soon)'
     }
   };
-  
+
   sendSuccess(res, apiInfo, 'API information');
 });
 
 // 404 handler
 app.use('*', (req, res) => {
-  res.status(404).json({ 
+  res.status(404).json({
     error: 'Route not found',
     message: `Cannot ${req.method} ${req.originalUrl}`
   });

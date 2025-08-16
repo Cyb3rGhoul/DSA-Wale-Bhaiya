@@ -64,7 +64,7 @@ const setAuthCookies = (res, accessToken, refreshToken) => {
   res.cookie('token', accessToken, {
     httpOnly: true,
     secure: config.nodeEnv === 'production',
-    sameSite: 'strict',
+    sameSite: config.nodeEnv === 'production' ? 'strict' : 'lax',
     expires: accessTokenExpiry
   });
   
@@ -72,7 +72,7 @@ const setAuthCookies = (res, accessToken, refreshToken) => {
   res.cookie('refreshToken', refreshToken, {
     httpOnly: true,
     secure: config.nodeEnv === 'production',
-    sameSite: 'strict',
+    sameSite: config.nodeEnv === 'production' ? 'strict' : 'lax',
     expires: refreshTokenExpiry
   });
 };

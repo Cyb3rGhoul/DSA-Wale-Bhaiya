@@ -79,6 +79,13 @@ class Logger {
   apiError(method, url, error) {
     if (this.isDevelopment) {
       console.error(`❌ API ${method.toUpperCase()}: ${url}`, error);
+      if (error.code === 'ERR_NETWORK') {
+        console.error('🔍 Network Error Details:');
+        console.error('- Check if backend server is running');
+        console.error('- Verify API URL configuration');
+        console.error('- Check CORS settings');
+        console.error(`- Current API URL: ${error.config?.baseURL || 'Not set'}`);
+      }
     } else {
       console.error(`API Error: ${method.toUpperCase()} ${url} - ${error.message || 'Unknown error'}`);
     }

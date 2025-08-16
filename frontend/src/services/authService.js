@@ -3,20 +3,30 @@ import logger from '../utils/logger.js';
 
 // Create axios instance with base configuration
 const getApiBaseURL = () => {
-  // In production, use the environment variable
-  if (import.meta.env.PROD) {
-    return import.meta.env.VITE_API_URL || 'https://your-backend-url.onrender.com/api';
+  const apiUrl = import.meta.env.VITE_API_URL;
+  
+  // If API URL is set, use it
+  if (apiUrl && apiUrl !== '/api') {
+    return apiUrl;
   }
-  // In development, use proxy or localhost
-  return import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+  
+  // In development, use direct localhost connection
+  if (import.meta.env.DEV) {
+    return 'http://localhost:3001/api';
+  }
+  
+  // In production, use environment variable or fallback
+  return import.meta.env.VITE_API_URL || 'https://your-backend-url.onrender.com/api';
 };
 
 const api = axios.create({
   baseURL: getApiBaseURL(),
-  withCredentials: true, // Include cookies in requests
+  withCredentials: false, // Disable for now to fix CORS
   headers: {
-    'Content-Type': 'application/json'
-  }
+    'Content-Type': 'application/json',
+    'Accept': 'application/json'
+  },
+  timeout: 10000 // 10 second timeout
 });
 
 // Request interceptor to add auth token
@@ -58,6 +68,12 @@ api.interceptors.response.use(
       error.config?.url || 'unknown',
       error
     );
+
+    // Handle network errors
+    if (error.code === 'ERR_NETWORK') {
+      console.error('🔥 Network Error - Backend might be down or CORS issue');
+      return Promise.reject(error);
+    }
     const originalRequest = error.config;
 
     // If we get a 401 and haven't already tried to refresh

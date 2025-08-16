@@ -9,13 +9,9 @@ export default defineConfig({
     react()
   ],
   server: {
-    proxy: {
-      '/api': {
-        target: 'http://localhost:3001',
-        changeOrigin: true,
-        secure: false,
-      }
-    }
+    port: 5173,
+    host: true,
+    // Removed proxy - using direct API calls instead
   },
   build: {
     outDir: 'dist',
